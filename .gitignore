@@ -5,6 +5,7 @@
 /*.bin
 /*.test
 /system_tests/*_fuzz/*
+/system_tests/execution-spec-tests/spec-tests/*
 !/system_tests/*_fuzz/*_fuzz.go
 node_modules
 .DS_Store
