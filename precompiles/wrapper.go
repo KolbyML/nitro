@@ -5,6 +5,7 @@ package precompiles
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -81,6 +82,7 @@ func (wrapper *OwnerPrecompile) Call(
 		gasLeft:     gasSupplied,
 		tracingInfo: util.NewTracingInfo(evm, caller, precompileAddress, util.TracingDuringEVM),
 	}
+	fmt.Println("air 1million")
 	state, err := arbosState.OpenArbosState(evm.StateDB, burner)
 	if err != nil {
 		return nil, burner.gasLeft, err

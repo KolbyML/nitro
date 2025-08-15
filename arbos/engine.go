@@ -5,6 +5,7 @@ package arbos
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -50,6 +51,7 @@ func (e Engine) Prepare(chain consensus.ChainHeaderReader, header *types.Header)
 }
 
 func (e Engine) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state vm.StateDB, body *types.Body) {
+	fmt.Println("million 2 f")
 	FinalizeBlock(header, body.Transactions, state, chain.Config())
 }
 

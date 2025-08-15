@@ -54,6 +54,7 @@ type TxProcessor struct {
 
 func NewTxProcessor(evm *vm.EVM, msg *core.Message) *TxProcessor {
 	tracingInfo := util.NewTracingInfo(evm, msg.From, arbosAddress, util.TracingBeforeEVM)
+	fmt.Println("dddd 1million")
 	arbosState := arbosState.OpenSystemArbosStateOrPanic(evm.StateDB, tracingInfo, false)
 	return &TxProcessor{
 		msg:                 msg,
@@ -134,6 +135,8 @@ func (p *TxProcessor) StartTxHook() (endTxNow bool, gasUsed uint64, err error, r
 	// This hook is called before gas charging and will end the state transition if endTxNow is set to true
 	// Hence, we must charge for any l2 resources if endTxNow is returned true
 
+	fmt.Println("hook 1million")
+
 	underlyingTx := p.msg.Tx
 	if underlyingTx == nil {
 		return false, 0, nil, nil
@@ -156,6 +159,7 @@ func (p *TxProcessor) StartTxHook() (endTxNow bool, gasUsed uint64, err error, r
 		evm.IncrementDepth() // fake a call
 
 		tracingInfo = util.NewTracingInfo(evm, from, *p.msg.To, util.TracingDuringEVM)
+		fmt.Println("eee 1million")
 		p.state = arbosState.OpenSystemArbosStateOrPanic(evm.StateDB, tracingInfo, false)
 
 		return func() {
@@ -169,8 +173,10 @@ func (p *TxProcessor) StartTxHook() (endTxNow bool, gasUsed uint64, err error, r
 		}
 	}
 
+	fmt.Println("hook 1.5million", underlyingTx.GetInner(), underlyingTx.Type())
 	switch tx := underlyingTx.GetInner().(type) {
 	case *types.ArbitrumDepositTx:
+		fmt.Println("hook 5million")
 		from := p.msg.From
 		to := p.msg.To
 		value := p.msg.Value
@@ -187,6 +193,7 @@ func (p *TxProcessor) StartTxHook() (endTxNow bool, gasUsed uint64, err error, r
 		core.Transfer(evm.StateDB, from, *to, uint256.MustFromBig(value))
 		return true, 0, nil, nil
 	case *types.ArbitrumInternalTx:
+		fmt.Println("hook 6million")
 		defer (startTracer())()
 		if p.msg.From != arbosAddress {
 			return true, 0, errors.New("internal tx not from arbAddress"), nil
@@ -194,6 +201,7 @@ func (p *TxProcessor) StartTxHook() (endTxNow bool, gasUsed uint64, err error, r
 		err = ApplyInternalTxUpdate(tx, p.state, evm)
 		return true, 0, err, nil
 	case *types.ArbitrumSubmitRetryableTx:
+		fmt.Println("hook 7million")
 		defer (startTracer())()
 		statedb := evm.StateDB
 		ticketId := underlyingTx.Hash()
@@ -384,6 +392,7 @@ func (p *TxProcessor) StartTxHook() (endTxNow bool, gasUsed uint64, err error, r
 
 		return true, usergas, nil, ticketId.Bytes()
 	case *types.ArbitrumRetryTx:
+		fmt.Println("hook 9million")
 		retryable, err := p.state.RetryableState().OpenRetryable(tx.TicketId, p.evm.Context.Time)
 		if err != nil {
 			return true, 0, err, nil
@@ -407,6 +416,8 @@ func (p *TxProcessor) StartTxHook() (endTxNow bool, gasUsed uint64, err error, r
 		p.CurrentRetryable = &ticketId
 		p.CurrentRefundTo = &refundTo
 	}
+
+	fmt.Println("hook 2million")
 	return false, 0, nil, nil
 }
 
@@ -436,6 +447,8 @@ func (p *TxProcessor) GasChargingHook(gasRemaining *uint64) (common.Address, err
 	// as if the user was buying an equivalent amount of L2 compute gas. This hook determines what
 	// that cost looks like, ensuring the user can pay and saving the result for later reference.
 
+	fmt.Println("million 4 kkk16.1|", *gasRemaining)
+
 	var gasNeededToStartEVM uint64
 	tipReceipient, _ := p.state.NetworkFeeAccount()
 	var basefee *big.Int
@@ -445,6 +458,8 @@ func (p *TxProcessor) GasChargingHook(gasRemaining *uint64) (common.Address, err
 		basefee = p.evm.Context.BaseFee
 	}
 
+	fmt.Println("million 4 kkk16.2|", *gasRemaining)
+
 	var poster common.Address
 	if !p.msg.TxRunContext.IsExecutedOnChain() {
 		poster = l1pricing.BatchPosterAddress
@@ -452,9 +467,14 @@ func (p *TxProcessor) GasChargingHook(gasRemaining *uint64) (common.Address, err
 		poster = p.evm.Context.Coinbase
 	}
 
+	fmt.Println("million 4 kkk16.3|", *gasRemaining)
+
 	if p.msg.TxRunContext.IsExecutedOnChain() {
 		p.msg.SkipL1Charging = false
 	}
+
+	fmt.Println("million 4 kkk16.4|", *gasRemaining)
+
 	if basefee.Sign() > 0 && !p.msg.SkipL1Charging {
 		// Since tips go to the network, and not to the poster, we use the basefee.
 		// Note, this only determines the amount of gas bought, not the price per gas.
@@ -472,21 +492,30 @@ func (p *TxProcessor) GasChargingHook(gasRemaining *uint64) (common.Address, err
 		gasNeededToStartEVM = p.posterGas
 	}
 
+	fmt.Println("million 4 kkk16.5|", *gasRemaining)
+
 	if *gasRemaining < gasNeededToStartEVM {
 		// the user couldn't pay for call data, so give up
 		return tipReceipient, core.ErrIntrinsicGas
 	}
 	*gasRemaining -= gasNeededToStartEVM
 
+	fmt.Println("million 4 kkk16.6|", *gasRemaining)
+
 	if !p.msg.TxRunContext.IsEthcall() {
 		// If this is a real tx, limit the amount of computed based on the gas pool.
 		// We do this by charging extra gas, and then refunding it later.
 		gasAvailable, _ := p.state.L2PricingState().PerBlockGasLimit()
+		fmt.Println("million 4 kkk16.71|", gasAvailable, *gasRemaining)
+
 		if *gasRemaining > gasAvailable {
 			p.computeHoldGas = *gasRemaining - gasAvailable
 			*gasRemaining = gasAvailable
 		}
 	}
+
+	fmt.Println("million 4 kkk16.7|", *gasRemaining)
+
 	return tipReceipient, nil
 }
 
@@ -602,6 +631,7 @@ func (p *TxProcessor) EndTxHook(gasLeft uint64, success bool) {
 		if success {
 			// we don't want to charge for this
 			tracingInfo := util.NewTracingInfo(p.evm, arbosAddress, p.msg.From, scenario)
+			fmt.Println("fff 1million")
 			state := arbosState.OpenSystemArbosStateOrPanic(p.evm.StateDB, tracingInfo, false)
 			_, _ = state.RetryableState().DeleteRetryable(inner.TicketId, p.evm, scenario)
 		} else {
@@ -683,6 +713,7 @@ func (p *TxProcessor) EndTxHook(gasLeft uint64, success bool) {
 }
 
 func (p *TxProcessor) ScheduledTxes() types.Transactions {
+	fmt.Println("hook 80million")
 	scheduled := types.Transactions{}
 	time := p.evm.Context.Time
 	// p.evm.Context.BaseFee is already lowered to 0 when vm runs with NoBaseFee flag and 0 gas price
@@ -715,6 +746,7 @@ func (p *TxProcessor) ScheduledTxes() types.Transactions {
 		)
 		scheduled = append(scheduled, types.NewTx(redeem))
 	}
+	fmt.Println("hook 90million", scheduled, p.state.ArbOSVersion())
 	return scheduled
 }
 
@@ -723,6 +755,7 @@ func (p *TxProcessor) L1BlockNumber(blockCtx vm.BlockContext) (uint64, error) {
 		return *p.cachedL1BlockNumber, nil
 	}
 	tracingInfo := util.NewTracingInfo(p.evm, p.msg.From, arbosAddress, util.TracingDuringEVM)
+	fmt.Println("ggg 1million")
 	state, err := arbosState.OpenSystemArbosState(p.evm.StateDB, tracingInfo, false)
 	if err != nil {
 		return 0, err
@@ -741,6 +774,7 @@ func (p *TxProcessor) L1BlockHash(blockCtx vm.BlockContext, l1BlockNumber uint64
 		return hash, nil
 	}
 	tracingInfo := util.NewTracingInfo(p.evm, p.msg.From, arbosAddress, util.TracingDuringEVM)
+	fmt.Println("hhh 1million")
 	state, err := arbosState.OpenSystemArbosState(p.evm.StateDB, tracingInfo, false)
 	if err != nil {
 		return common.Hash{}, err
@@ -787,6 +821,7 @@ func (p *TxProcessor) MsgIsNonMutating() bool {
 }
 
 func (p *TxProcessor) IsCalldataPricingIncreaseEnabled() bool {
+	fmt.Println("hook 100million", p.state.ArbOSVersion(), params.ArbosVersion_40)
 	if p.state.ArbOSVersion() < params.ArbosVersion_40 {
 		return false
 	}

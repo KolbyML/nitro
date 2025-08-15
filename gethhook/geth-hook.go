@@ -5,6 +5,7 @@ package gethhook
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/core"
@@ -46,8 +47,11 @@ func (p ArbosPrecompileWrapper) RunAdvanced(
 }
 
 func init() {
+	fmt.Println("save the world")
 	core.ReadyEVMForL2 = func(evm *vm.EVM, msg *core.Message) {
+		fmt.Println("save the world 2")
 		if evm.ChainConfig().IsArbitrum() {
+			fmt.Println("save the world 1")
 			evm.ProcessingHook = arbos.NewTxProcessor(evm, msg)
 		}
 	}

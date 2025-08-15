@@ -45,6 +45,7 @@ func InternalTxStartBlock(
 }
 
 func ApplyInternalTxUpdate(tx *types.ArbitrumInternalTx, state *arbosState.ArbosState, evm *vm.EVM) error {
+	fmt.Println("hellocopter")
 	if len(tx.Data) < 4 {
 		return fmt.Errorf("internal tx data is too short (only %v bytes, at least 4 required)", len(tx.Data))
 	}

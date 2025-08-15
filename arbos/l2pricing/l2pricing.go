@@ -4,6 +4,7 @@
 package l2pricing
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/offchainlabs/nitro/arbos/storage"
@@ -43,6 +44,10 @@ func InitializeL2PricingState(sto *storage.Storage) error {
 }
 
 func OpenL2PricingState(sto *storage.Storage) *L2PricingState {
+	fmt.Println("million 4 mmm1.1|")
+	sto.OpenStorageBackedUint64(perBlockGasLimitOffset)
+	fmt.Println("million 4 mmm1.2|")
+
 	return &L2PricingState{
 		sto,
 		sto.OpenStorageBackedUint64(speedLimitPerSecondOffset),

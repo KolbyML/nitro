@@ -23,10 +23,15 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/offchainlabs/nitro/gethhook"
+	"github.com/offchainlabs/nitro/wavmio"
 )
 
 // TestExecutionSpecBlocktests runs the test fixtures from execution-spec-tests.
 func TestExecutionSpecBlocktests(t *testing.T) {
+	wavmio.StubInit()
+	gethhook.RequireHookedGeth()
+
 	if !common.FileExist(executionSpecBlockchainTestDir) {
 		t.Skipf("directory %s does not exist", executionSpecBlockchainTestDir)
 	}
@@ -40,10 +45,10 @@ func TestExecutionSpecBlocktests(t *testing.T) {
 	bt.skipLoad(`^cancun/eip6780_selfdestruct/selfdestruct/delegatecall_from_new_contract_to_pre_existing_contract.json`)
 
 	// On Arbitrum ModExp broken on Paris and Cancun, but not Shanghai?
-	bt.skipLoad(`test_modexp\.py::test_modexp\[fork_(Cancun|Paris)`)
+	bt.skipLoad(`test_modexp\.py::test_modexp\[fork_(Cancun|Paris|Prague)`)
 
 	// Not all opcodes supported on Mainnet are supported on Arbitrum.
-	bt.skipLoad(`test_all_opcodes\.py::test_all_opcodes\[fork_(Cancun|Paris)`)
+	bt.skipLoad(`test_all_opcodes\.py::test_all_opcodes\[fork_(Cancun|Paris|Prague)`)
 
 	// Arbitrum doesn't support withdrawals
 	bt.skipLoad(`^shanghai/eip4895_withdrawals/withdrawals/.*\.json$`)
@@ -54,6 +59,13 @@ func TestExecutionSpecBlocktests(t *testing.T) {
 	// Arbitrum doesn't support eip4844
 	bt.skipLoad(`^cancun/eip4844_blobs/.+\.json$`)
 	bt.skipLoad(`^cancun/eip7516_blobgasfee/.+\.json$`)
+
+	// Arbitrum doesn't support EIP-6610, EIP-7002, EIP-7251, EIP-7623, EIP-7685 from Prague
+	bt.skipLoad(`^prague/eip6110_deposits/.+\.json$`)
+	bt.skipLoad(`^prague/eip7002_el_triggerable_withdrawals/.+\.json$`)
+	bt.skipLoad(`^prague/eip7251_consolidations/.+\.json$`)
+	bt.skipLoad(`^prague/eip7623_increase_calldata_cost/.+\.json$`)
+	bt.skipLoad(`^prague/eip7685_general_purpose_el_requests/.+\.json$`)
 
 	bt.walk(t, executionSpecBlockchainTestDir, func(t *testing.T, name string, test *BlockTest) {
 		execBlockTest(t, bt, test)

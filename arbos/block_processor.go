@@ -184,6 +184,7 @@ func ProduceBlock(
 	isMsgForPrefetch bool,
 	runCtx *core.MessageRunContext,
 ) (*types.Block, types.Receipts, error) {
+	fmt.Println("million 3 k")
 	chainConfig := chainContext.Config()
 	txes, err := ParseL2Transactions(message, chainConfig.ChainID)
 	if err != nil {
@@ -208,7 +209,7 @@ func ProduceBlockAdvanced(
 	isMsgForPrefetch bool,
 	runCtx *core.MessageRunContext,
 ) (*types.Block, types.Receipts, error) {
-
+	fmt.Println("aaa 1million")
 	arbState, err := arbosState.OpenSystemArbosState(statedb, nil, true)
 	if err != nil {
 		return nil, nil, err
@@ -414,6 +415,7 @@ func ProduceBlockAdvanced(
 
 		if tx.Type() == types.ArbitrumInternalTxType {
 			// ArbOS might have upgraded to a new version, so we need to refresh our state
+			fmt.Println("bbb 1million")
 			arbState, err = arbosState.OpenSystemArbosState(statedb, nil, true)
 			if err != nil {
 				return nil, nil, err
@@ -565,6 +567,7 @@ func FinalizeBlock(header *types.Header, txs types.Transactions, statedb vm.Stat
 		if header.Number.Uint64() == chainConfig.ArbitrumChainParams.GenesisBlockNum {
 			arbosVersion = chainConfig.ArbitrumChainParams.InitialArbOSVersion
 		} else {
+			fmt.Println("ccc 1million")
 			state, err := arbosState.OpenSystemArbosState(statedb, nil, true)
 			if err != nil {
 				newErr := fmt.Errorf("%w while opening arbos state. Block: %d root: %v", err, header.Number, header.Root)
@@ -585,5 +588,6 @@ func FinalizeBlock(header *types.Header, txs types.Transactions, statedb vm.Stat
 		}
 		arbitrumHeader.UpdateHeaderWithInfo(header)
 		header.Root = statedb.IntermediateRoot(true)
+		fmt.Println("million 2 e", header.Root)
 	}
 }

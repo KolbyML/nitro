@@ -71,8 +71,10 @@ var ErrUninitializedArbOS = errors.New("ArbOS uninitialized")
 var ErrAlreadyInitialized = errors.New("ArbOS is already initialized")
 
 func OpenArbosState(stateDB vm.StateDB, burner burn.Burner) (*ArbosState, error) {
+	fmt.Println("beek 1million")
 	backingStorage := storage.NewGeth(stateDB, burner)
 	arbosVersion, err := backingStorage.GetUint64ByUint64(uint64(versionOffset))
+	fmt.Println("beek 1million 2", arbosVersion, err)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +108,7 @@ func OpenArbosState(stateDB vm.StateDB, burner burn.Burner) (*ArbosState, error)
 }
 
 func OpenSystemArbosState(stateDB vm.StateDB, tracingInfo *util.TracingInfo, readOnly bool) (*ArbosState, error) {
+	fmt.Println("plane 1million")
 	burner := burn.NewSystemBurner(tracingInfo, readOnly)
 	newState, err := OpenArbosState(stateDB, burner)
 	burner.Restrict(err)
@@ -113,6 +116,7 @@ func OpenSystemArbosState(stateDB vm.StateDB, tracingInfo *util.TracingInfo, rea
 }
 
 func OpenSystemArbosStateOrPanic(stateDB vm.StateDB, tracingInfo *util.TracingInfo, readOnly bool) *ArbosState {
+	fmt.Println("iii 1million")
 	newState, err := OpenSystemArbosState(stateDB, tracingInfo, readOnly)
 	if err != nil {
 		panic(err)
@@ -254,6 +258,7 @@ func InitializeArbosState(stateDB vm.StateDB, burner burn.Burner, chainConfig *p
 	nativeTokenOwnersStorage := sto.OpenCachedSubStorage(nativeTokenOwnerSubspace)
 	_ = addressSet.Initialize(nativeTokenOwnersStorage)
 
+	fmt.Println("duck 1million")
 	aState, err := OpenArbosState(stateDB, burner)
 	if err != nil {
 		return nil, err
@@ -270,6 +275,7 @@ func InitializeArbosState(stateDB vm.StateDB, burner burn.Burner, chainConfig *p
 func (state *ArbosState) UpgradeArbosVersionIfNecessary(
 	currentTimestamp uint64, stateDB vm.StateDB, chainConfig *params.ChainConfig,
 ) error {
+	fmt.Println("lll 1million")
 	upgradeTo, err := state.upgradeVersion.Get()
 	state.Restrict(err)
 	flagday, _ := state.upgradeTimestamp.Get()
@@ -284,6 +290,7 @@ var ErrFatalNodeOutOfDate = errors.New("please upgrade to the latest version of 
 func (state *ArbosState) UpgradeArbosVersion(
 	upgradeTo uint64, firstTime bool, stateDB vm.StateDB, chainConfig *params.ChainConfig,
 ) error {
+	fmt.Println("kkk 1million")
 	for state.arbosVersion < upgradeTo {
 		ensure := func(err error) {
 			if err != nil {
@@ -294,6 +301,8 @@ func (state *ArbosState) UpgradeArbosVersion(
 				panic(message)
 			}
 		}
+
+		fmt.Println("kakcaktaklap")
 
 		nextArbosVersion := state.arbosVersion + 1
 		switch nextArbosVersion {
@@ -362,6 +371,7 @@ func (state *ArbosState) UpgradeArbosVersion(
 			// these versions are left to Orbit chains for custom upgrades.
 
 		case params.ArbosVersion_40:
+			fmt.Println("big mac dakota")
 			// EIP-2935: Add support for historical block hashes.
 			stateDB.SetNonce(params.HistoryStorageAddress, 1, tracing.NonceChangeUnspecified)
 			stateDB.SetCode(params.HistoryStorageAddress, params.HistoryStorageCodeArbitrum)
@@ -409,6 +419,7 @@ func (state *ArbosState) UpgradeArbosVersion(
 }
 
 func (state *ArbosState) ScheduleArbOSUpgrade(newVersion uint64, timestamp uint64) error {
+	fmt.Println("mmm 1million")
 	err := state.upgradeVersion.Set(newVersion)
 	if err != nil {
 		return err
@@ -417,6 +428,7 @@ func (state *ArbosState) ScheduleArbOSUpgrade(newVersion uint64, timestamp uint6
 }
 
 func (state *ArbosState) GetScheduledUpgrade() (uint64, uint64, error) {
+	fmt.Println("nnn 1million")
 	version, err := state.upgradeVersion.Get()
 	if err != nil {
 		return 0, 0, err

@@ -138,6 +138,7 @@ func (s *Storage) Get(key common.Hash) (common.Hash, error) {
 
 // Gets a storage slot for free. Dangerous due to DoS potential.
 func (s *Storage) GetFree(key common.Hash) common.Hash {
+	fmt.Println("beek 1millionb", s.mapAddress(key))
 	return s.db.GetState(s.account, s.mapAddress(key))
 }
 
@@ -146,6 +147,7 @@ func (s *Storage) GetStorageSlot(key common.Hash) common.Hash {
 }
 
 func (s *Storage) GetUint64(key common.Hash) (uint64, error) {
+	fmt.Println("beek 1milliona", key)
 	value, err := s.Get(key)
 	return value.Big().Uint64(), err
 }
@@ -155,6 +157,7 @@ func (s *Storage) GetByUint64(key uint64) (common.Hash, error) {
 }
 
 func (s *Storage) GetUint64ByUint64(key uint64) (uint64, error) {
+	fmt.Println("beek 1millionb", key)
 	return s.GetUint64(util.UintToHash(key))
 }
 
@@ -369,6 +372,7 @@ type StorageSlot struct {
 }
 
 func (s *Storage) NewSlot(offset uint64) StorageSlot {
+	fmt.Println("million 4 mmm1.3|", s.mapAddress(util.UintToHash(offset)), util.UintToHash(offset))
 	return StorageSlot{s.account, s.db, s.mapAddress(util.UintToHash(offset)), s.burner}
 }
 

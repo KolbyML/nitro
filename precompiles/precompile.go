@@ -736,6 +736,7 @@ func (p *Precompile) Call(
 
 	if method.purity != pure {
 		// impure methods may need the ArbOS state, so open & update the call context now
+		fmt.Println("dog 1million")
 		state, err := arbosState.OpenArbosState(evm.StateDB, callerCtx)
 		if err != nil {
 			return nil, 0, err
