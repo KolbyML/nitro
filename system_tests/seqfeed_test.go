@@ -14,11 +14,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/offchainlabs/nitro/arbnode"
+	dbschema "github.com/offchainlabs/nitro/arbnode/db-schema"
 	"github.com/offchainlabs/nitro/arbos"
 	"github.com/offchainlabs/nitro/arbos/arbostypes"
 	"github.com/offchainlabs/nitro/arbos/l1pricing"
+	"github.com/offchainlabs/nitro/arbos/util"
 	"github.com/offchainlabs/nitro/arbutil"
 	"github.com/offchainlabs/nitro/broadcastclient"
 	"github.com/offchainlabs/nitro/broadcaster/backlog"
@@ -471,8 +474,17 @@ func TestPopulateFeedBacklog(t *testing.T) {
 	nodeConfigSink := builder.nodeConfig
 	port := testhelpers.AddrTCPPort(builder.L2.ConsensusNode.BroadcastServer.ListenerAddr(), t)
 	nodeConfigSink.Feed.Input = *newBroadcastClientConfigTest(port)
+	nodeConfigSink.Feed.Output = *newBroadcasterConfigTest()
 	testClientSink, cleanupSink := builder.Build2ndNode(t, &SecondNodeParams{nodeConfig: nodeConfigSink})
 	defer cleanupSink()
+
+	// balance2, err := testClientSink.Client.BalanceAt(ctx, builder.L2Info.GetAddress(userAccount), nil)
+	// if err != nil {
+	// 	t.Fatal("error getting fraud balance:", err)
+	// }
+	// if balance2.Cmp(big.NewInt(1e12)) != 0 {
+	// 	t.Fatal("Unexpected balance:", balance2)
+	// }
 
 	// Waits for the transaction to be processed by the sink node.
 	_, err = WaitForTx(ctx, testClientSink.Client, tx.Hash(), time.Second*5)
@@ -490,4 +502,102 @@ func TestPopulateFeedBacklog(t *testing.T) {
 	if logHandler.WasLogged(arbnode.BlockHashMismatchLogMsg) {
 		t.Fatal("BlockHashMismatchLogMsg was logged unexpectedly")
 	}
+}
+
+func TestRegressionInPopulateFeedBacklog(t *testing.T) {
+	fmt.Println("test start kakbat 1")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	builder := NewNodeBuilder(ctx).DefaultConfig(t, true)
+	builder.BuildL1(t)
+
+	userAccount := "User2"
+	builder.L2Info.GenerateAccount(userAccount)
+
+	// Guarantees that nodes will rely only on the feed to receive messages
+	builder.nodeConfig.BatchPoster.Enable = false
+	builder.BuildL2OnL1(t)
+
+	// Sends a transaction
+	tx := builder.L2Info.PrepareTx("Owner", userAccount, builder.L2Info.TransferGas, big.NewInt(1e12), nil)
+	err := builder.L2.Client.SendTransaction(ctx, tx)
+	Require(t, err)
+	_, err = builder.L2.EnsureTxSucceeded(tx)
+	Require(t, err)
+
+	// Get index to override
+
+	messageCount, err := builder.L2.ConsensusNode.TxStreamer.GetMessageCount()
+	if err != nil {
+		panic(fmt.Sprintf("error getting tx streamer message count: %v", err))
+	}
+	indexToOverride := messageCount - 1
+
+	// Create dummy batch posting report message
+	data, err := createBatchPostingReportTransaction()
+	Require(t, err)
+	dummyMessage := arbostypes.MessageWithMetadata{
+		Message: &arbostypes.L1IncomingMessage{
+			Header: &arbostypes.L1IncomingMessageHeader{
+				Kind:        arbostypes.L1MessageType_BatchPostingReport,
+				Poster:      l1pricing.BatchPosterAddress,
+				BlockNumber: 0,
+				Timestamp:   0,
+			},
+			L2msg: data,
+		},
+		DelayedMessagesRead: 0,
+	}
+
+	// Override last index to be a batch posting report
+
+	key := dbKey(dbschema.MessagePrefix, uint64(indexToOverride))
+	msgBytes, err := rlp.EncodeToBytes(dummyMessage)
+	if err != nil {
+		panic(fmt.Sprintf("error encoding dummy message: %v", err))
+	}
+
+	batch := builder.L2.ConsensusNode.ArbDB.NewBatch()
+	if err := batch.Put(key, msgBytes); err != nil {
+		panic(fmt.Sprintf("error putting dummy message to db: %v", err))
+	}
+	err = batch.Write()
+	if err != nil {
+		panic(fmt.Sprintf("error writing batch to db: %v", err))
+	}
+
+	// Shutdown node and starts a new one with same data dir and output feed enabled.
+	// The new node will populate the feedbacklog since already has a message, related to the
+	// transaction previously sent, stored in disk.
+	builder.L2.cleanup()
+	dataDir := builder.l2StackConfig.DataDir
+	builder.l2StackConfig.DataDir = dataDir
+	builder.nodeConfig.Feed.Output = *newBroadcasterConfigTest()
+	cleanup := builder.BuildL2OnL1(t)
+	defer cleanup()
+}
+
+// if lastArbosVersion is under 50: we'll create a legacy batch-posting report
+// arbos-50+ can parse both legacy and v2 batch posting report, so it's o.k. that we rely on previous block
+func createBatchPostingReportTransaction() ([]byte, error) {
+	batchTimestamp := new(big.Int)
+	batchTimestamp.SetUint64(0)
+	batchPosterAddr := common.Address{}
+	batchNum := uint64(0)
+	batchGas := uint64(0)
+	l1BaseFee := new(big.Int)
+	l1BaseFee.SetUint64(0)
+
+	var data []byte
+	data, err := util.PackInternalTxDataBatchPostingReport(
+		batchTimestamp, batchPosterAddr, batchNum, batchGas, l1BaseFee,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	chainId := new(big.Int)
+	chainId.SetUint64(0)
+	return data, nil
 }

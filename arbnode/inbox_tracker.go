@@ -275,12 +275,16 @@ func (t *InboxTracker) FindInboxBatchContainingMessage(pos arbutil.MessageIndex)
 }
 
 func (t *InboxTracker) PopulateFeedBacklog(broadcastServer *broadcaster.Broadcaster) error {
+	fmt.Println("kakbat 1")
 	batchCount, err := t.GetBatchCount()
+	fmt.Println("kakbat 2")
 	if err != nil {
 		return fmt.Errorf("error getting batch count: %w", err)
 	}
+	fmt.Println("kakbat 3")
 	var startMessage arbutil.MessageIndex
 	if batchCount >= 2 {
+		fmt.Println("kakbat 4")
 		// As in AddSequencerBatches, we want to keep the most recent batch's messages.
 		// This prevents issues if a user's L1 is a bit behind or an L1 reorg occurs.
 		// `batchCount - 2` is the index of the batch before the last batch.
@@ -290,35 +294,44 @@ func (t *InboxTracker) PopulateFeedBacklog(broadcastServer *broadcaster.Broadcas
 			return fmt.Errorf("error getting batch %v message count: %w", batchIndex, err)
 		}
 	}
+	fmt.Println("kakbat 5")
 	messageCount, err := t.txStreamer.GetMessageCount()
 	if err != nil {
 		return fmt.Errorf("error getting tx streamer message count: %w", err)
 	}
+	fmt.Println("kakbat 6", startMessage < messageCount, startMessage, messageCount)
 	var feedMessages []*message.BroadcastFeedMessage
 	for seqNum := startMessage; seqNum < messageCount; seqNum++ {
+		fmt.Println("kakbat 7")
 		message, err := t.txStreamer.GetMessage(seqNum)
 		if err != nil {
 			return fmt.Errorf("error getting message %v: %w", seqNum, err)
 		}
+		fmt.Println("kakbat 8")
 
 		msgResult, err := t.txStreamer.ResultAtMessageIndex(seqNum)
+		fmt.Println("kakbat 9")
 		var blockHash *common.Hash
 		if err == nil {
 			blockHash = &msgResult.BlockHash
 		}
-
+		fmt.Println("kakbat 10")
 		blockMetadata, err := t.txStreamer.BlockMetadataAtMessageIndex(seqNum)
 		if err != nil {
 			log.Warn("Error getting blockMetadata byte array from tx streamer", "err", err)
 		}
-
+		fmt.Println("kakbat 11")
 		feedMessage, err := broadcastServer.NewBroadcastFeedMessage(*message, seqNum, blockHash, blockMetadata)
+		fmt.Println("kakbat 12")
 		if err != nil {
 			return fmt.Errorf("error creating broadcast feed message %v: %w", seqNum, err)
 		}
 		feedMessages = append(feedMessages, feedMessage)
+		fmt.Println("kakbat 13")
 	}
+	fmt.Println("kakbat 14")
 	broadcastServer.BroadcastFeedMessages(feedMessages)
+	fmt.Println("kakbat 15")
 	return nil
 }
 

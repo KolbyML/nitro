@@ -48,8 +48,8 @@ import (
 	"github.com/offchainlabs/nitro/solgen/go/precompilesgen"
 	"github.com/offchainlabs/nitro/staker"
 	"github.com/offchainlabs/nitro/staker/bold"
-	"github.com/offchainlabs/nitro/staker/legacy"
-	"github.com/offchainlabs/nitro/staker/multi_protocol"
+	legacystaker "github.com/offchainlabs/nitro/staker/legacy"
+	multiprotocolstaker "github.com/offchainlabs/nitro/staker/multi_protocol"
 	"github.com/offchainlabs/nitro/staker/validatorwallet"
 	"github.com/offchainlabs/nitro/util/containers"
 	"github.com/offchainlabs/nitro/util/contracts"
@@ -1373,14 +1373,18 @@ func (n *Node) Start(ctx context.Context) error {
 			return fmt.Errorf("error initializing feed broadcast server: %w", err)
 		}
 	}
+	fmt.Println("dddkakbatd 1", n.InboxTracker != nil, n.BroadcastServer != nil)
 	if n.InboxTracker != nil && n.BroadcastServer != nil {
+		fmt.Println("dddkakbatd 2")
 		// Even if the sequencer coordinator will populate this backlog,
 		// we want to make sure it's populated before any clients connect.
 		err = n.InboxTracker.PopulateFeedBacklog(n.BroadcastServer)
+		fmt.Println("dddkakbatd 3")
 		if err != nil {
 			return fmt.Errorf("error populating feed backlog on startup: %w", err)
 		}
 	}
+	fmt.Println("dddkakbatd 4")
 	err = n.TxStreamer.Start(ctx)
 	if err != nil {
 		return fmt.Errorf("error starting transaction streamer: %w", err)

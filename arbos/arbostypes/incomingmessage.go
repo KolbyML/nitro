@@ -176,18 +176,24 @@ func LegacyCostForStats(stats *BatchDataStats) uint64 {
 }
 
 func (msg *L1IncomingMessage) FillInBatchGasFields(batchFetcher FallibleBatchFetcher) error {
+	fmt.Println("dog kakbat -1", batchFetcher == nil, msg.Header.Kind != L1MessageType_BatchPostingReport, msg.Header.Kind, L1MessageType_BatchPostingReport, "msg.BatchDataStats == nil", msg.BatchDataStats == nil)
 	if batchFetcher == nil || msg.Header.Kind != L1MessageType_BatchPostingReport {
 		return nil
 	}
+	fmt.Println("dog kakbat 0")
 	if msg.BatchDataStats != nil && msg.LegacyBatchGasCost != nil {
 		return nil
 	}
+	fmt.Println("dog kakbat 1")
 	if msg.BatchDataStats == nil {
+		fmt.Println("dog kakbat 2")
 		_, _, batchHash, batchNum, _, _, err := ParseBatchPostingReportMessageFields(bytes.NewReader(msg.L2msg))
 		if err != nil {
 			return fmt.Errorf("failed to parse batch posting report: %w", err)
 		}
+		fmt.Println("dog kakbat 3")
 		batchData, err := batchFetcher(batchNum)
+		fmt.Println("dog kakbat 4")
 		if err != nil {
 			return fmt.Errorf("failed to fetch batch mentioned by batch posting report: %w", err)
 		}
@@ -330,26 +336,32 @@ func (msg *L1IncomingMessage) ParseInitMessage() (*ParsedInitMessage, error) {
 }
 
 func ParseBatchPostingReportMessageFields(rd io.Reader) (*big.Int, common.Address, common.Hash, uint64, *big.Int, uint64, error) {
+	fmt.Println("top kakbat 1")
 	batchTimestamp, err := util.HashFromReader(rd)
 	if err != nil {
 		return nil, common.Address{}, common.Hash{}, 0, nil, 0, err
 	}
+	fmt.Println("top kakbat 2")
 	batchPosterAddr, err := util.AddressFromReader(rd)
 	if err != nil {
 		return nil, common.Address{}, common.Hash{}, 0, nil, 0, err
 	}
+	fmt.Println("top kakbat 3")
 	dataHash, err := util.HashFromReader(rd)
 	if err != nil {
 		return nil, common.Address{}, common.Hash{}, 0, nil, 0, err
 	}
+	fmt.Println("top kakbat 4")
 	batchNum, err := util.HashFromReader(rd)
 	if err != nil {
 		return nil, common.Address{}, common.Hash{}, 0, nil, 0, err
 	}
+	fmt.Println("top kakbat 5")
 	l1BaseFee, err := util.HashFromReader(rd)
 	if err != nil {
 		return nil, common.Address{}, common.Hash{}, 0, nil, 0, err
 	}
+	fmt.Println("top kakbat 6")
 	extraGas, err := util.Uint64FromReader(rd)
 	if errors.Is(err, io.EOF) {
 		// This field isn't always present
@@ -359,9 +371,11 @@ func ParseBatchPostingReportMessageFields(rd io.Reader) (*big.Int, common.Addres
 	if err != nil {
 		return nil, common.Address{}, common.Hash{}, 0, nil, 0, err
 	}
+	fmt.Println("top kakbat 7")
 	batchNumBig := batchNum.Big()
 	if !batchNumBig.IsUint64() {
 		return nil, common.Address{}, common.Hash{}, 0, nil, 0, fmt.Errorf("batch number %v is not a uint64", batchNumBig)
 	}
+	fmt.Println("top kakbat 8")
 	return batchTimestamp.Big(), batchPosterAddr, dataHash, batchNumBig.Uint64(), l1BaseFee.Big(), extraGas, nil
 }

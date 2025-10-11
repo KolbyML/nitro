@@ -218,6 +218,7 @@ func (s *TransactionStreamer) cleanupInconsistentState() error {
 		return err
 	}
 	if !hasMessageCount {
+		fmt.Println("kakbat Writing message count 3:", 0)
 		err := setMessageCount(s.db, 0)
 		if err != nil {
 			return err
@@ -445,6 +446,7 @@ func (s *TransactionStreamer) addMessagesAndReorg(batch ethdb.Batch, msgIdxOfFir
 		}
 	}
 
+	fmt.Println("kakbat Writing message count 2:", msgIdxOfFirstMsgToAdd)
 	return setMessageCount(batch, msgIdxOfFirstMsgToAdd)
 }
 
@@ -482,8 +484,11 @@ func (s *TransactionStreamer) GetMessage(msgIdx arbutil.MessageIndex) (*arbostyp
 		return nil, err
 	}
 
+	fmt.Println("cat kakbat 1")
 	err = message.Message.FillInBatchGasFields(func(batchNum uint64) ([]byte, error) {
+		fmt.Println("cat kakbat 2")
 		ctx, err := s.GetContextSafe()
+		fmt.Println("cat kakbat 3")
 		if err != nil {
 			return nil, err
 		}
@@ -541,6 +546,7 @@ func (s *TransactionStreamer) GetMessageCount() (arbutil.MessageIndex, error) {
 	}
 	var count uint64
 	err = rlp.DecodeBytes(countBytes, &count)
+	fmt.Println("Decoded message count:", count)
 	if err != nil {
 		return 0, err
 	}
@@ -1215,6 +1221,7 @@ func (s *TransactionStreamer) writeMessages(firstMsgIdx arbutil.MessageIndex, me
 		}
 	}
 
+	fmt.Println("kakbat Writing message count 1:", firstMsgIdx+arbutil.MessageIndex(len(messages)))
 	err := setMessageCount(batch, firstMsgIdx+arbutil.MessageIndex(len(messages)))
 	if err != nil {
 		return err
